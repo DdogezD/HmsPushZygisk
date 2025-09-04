@@ -3,6 +3,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 LOCAL_MODULE := hmspush
 LOCAL_SRC_FILES := main.cpp server.cpp hook.cpp atexit.cpp
+LOCAL_CPPFLAGS := -fvisibility=hidden
 LOCAL_STATIC_LIBRARIES := libcxx
 LOCAL_LDLIBS := -llog
 include $(BUILD_SHARED_LIBRARY)
