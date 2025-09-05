@@ -35,16 +35,20 @@ void hookBuild(JNIEnv *env) {
     jstring new_manufacturer = env->NewStringUTF("HUAWEI");
 
     jfieldID brand_id = env->GetStaticFieldID(build_class, "BRAND", "Ljava/lang/String;");
-    if (brand_id != nullptr) {
-        env->SetStaticObjectField(build_class, brand_id, new_brand);
+    if (!skipBrand) {
+        jstring new_brand = env->NewStringUTF("Huawei");
+        jfieldID brand_id = env->GetStaticFieldID(build_class, "BRAND", "Ljava/lang/String;");
+        if (brand_id != nullptr) {
+            env->SetStaticObjectField(build_class, brand_id, new_brand);
+        }
+        env->DeleteLocalRef(new_brand);
     }
 
+    jstring new_manufacturer = env->NewStringUTF("HUAWEI");
     jfieldID manufacturer_id = env->GetStaticFieldID(build_class, "MANUFACTURER", "Ljava/lang/String;");
     if (manufacturer_id != nullptr) {
         env->SetStaticObjectField(build_class, manufacturer_id, new_manufacturer);
     }
-
-    env->DeleteLocalRef(new_brand);
     env->DeleteLocalRef(new_manufacturer);
 
     LOGD("hook Build done");
@@ -66,6 +70,6 @@ void hookSystemProperties(JNIEnv *env, zygisk::Api *api) {
 }
 
 void Hook::hook() {
-    hookBuild(env);
+    hookBuild(env, skipBrand);
     hookSystemProperties(env, api);
 }

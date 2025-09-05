@@ -96,7 +96,13 @@ private:
 
             if (shouldHook) {
                 LOGI("hook package = [%s], process = [%s]\n", packageName.c_str(), process.c_str());
-                Hook(api, env).hook();
+                bool skipBrand = false;
+                string actualPackageName = packageName;
+                if (!packageName.empty() && packageName[0] == '!') {
+                    skipBrand = true;
+                    actualPackageName = packageName.substr(1);
+                }
+                Hook(api, env, skipBrand).hook();
                 return;
             }
         }
