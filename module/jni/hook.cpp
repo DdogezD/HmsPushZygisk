@@ -28,12 +28,10 @@ jstring my_native_get(JNIEnv *env, jclass clazz, jstring keyJ, jstring defJ) {
     }
 }
 
-void hookBuild(JNIEnv *env) {
+void hookBuild(JNIEnv *env, bool skipBrand) {
     LOGD("hook Build\n");
     jclass build_class = env->FindClass("android/os/Build");
     jstring new_brand = env->NewStringUTF("Huawei");
-    jstring new_manufacturer = env->NewStringUTF("HUAWEI");
-
     jfieldID brand_id = env->GetStaticFieldID(build_class, "BRAND", "Ljava/lang/String;");
     if (!skipBrand) {
         jstring new_brand = env->NewStringUTF("Huawei");
@@ -43,7 +41,6 @@ void hookBuild(JNIEnv *env) {
         }
         env->DeleteLocalRef(new_brand);
     }
-
     jstring new_manufacturer = env->NewStringUTF("HUAWEI");
     jfieldID manufacturer_id = env->GetStaticFieldID(build_class, "MANUFACTURER", "Ljava/lang/String;");
     if (manufacturer_id != nullptr) {
