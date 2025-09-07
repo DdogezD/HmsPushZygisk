@@ -83,31 +83,28 @@ private:
         return "";
     }
 
-    void preSpecialize(const string &packageName, const string &process) {
+    void preSpecialize(string &packageName, const string &process) {
         vector<string> processList = requestRemoteConfig(packageName);
         if (!processList.empty()) {
             bool shouldHook = false;
-            for (const auto &item: processList) {
+            for (const auto &item : processList) {
                 if (item.empty() || item == process) {
                     shouldHook = true;
                     break;
                 }
             }
-
+    
             if (shouldHook) {
-                LOGI("hook package = [%s], process = [%s]\n", packageName.c_str(), process.c_str());
                 bool skipBrand = false;
-                string actualPackageName = packageName;
                 if (!packageName.empty() && packageName[0] == '!') {
                     skipBrand = true;
-                    actualPackageName = packageName.substr(1);
+                    packageName = packageName.substr(1);
                 }
                 Hook(api, env, skipBrand).hook();
                 return;
             }
         }
-
-        // Since we do not hook any functions, we should let Zygisk dlclose ourselves
+    
         api->setOption(zygisk::Option::DLCLOSE_MODULE_LIBRARY);
     }
 
