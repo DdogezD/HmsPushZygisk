@@ -161,7 +161,7 @@ private:
         return bytesReceived;
     }
 
-    static vector<string> parseConfig(const vector<char> &content, const string &packageName,  c bool &skipBrand) {
+    static vector<string> parseConfig(const vector<char> &content, const string &packageName, bool &skipBrand) {
         vector<string> result;
         skipBrand = false;
         if (content.empty()) return result;
