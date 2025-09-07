@@ -84,7 +84,9 @@ private:
     }
 
     void preSpecialize(const string &packageName, const string &process) {
-        vector<string> processList = requestRemoteConfig(packageName);
+        bool skipBrand = false;
+        vector<string> processList = requestRemoteConfig(packageName, skipBrand);
+    
         if (!processList.empty()) {
             bool shouldHook = false;
             for (const auto &item: processList) {
@@ -93,18 +95,16 @@ private:
                     break;
                 }
             }
-
+    
             if (shouldHook) {
-                LOGI("hook package = [%s], process = [%s]\n", packageName.c_str(), process.c_str());
-                Hook(api, env).hook();
+                LOGI("hook package = [%s], process = [%s], skipBrand=%d\n",
+                     packageName.c_str(), process.c_str(), skipBrand);
+                Hook(api, env, skipBrand).hook();
                 return;
             }
         }
-
-        // Since we do not hook any functions, we should let Zygisk dlclose ourselves
         api->setOption(zygisk::Option::DLCLOSE_MODULE_LIBRARY);
     }
-
     /**
      * Request remote config from companion
      * @param packageName
@@ -158,21 +158,32 @@ private:
         return bytesReceived;
     }
 
-    static vector<string> parseConfig(const vector<char> &content, const string &packageName) {
+    static vector<string> parseConfig(const vector<char> &content, const string &packageName, bool &skipBrand) {
         vector<string> result;
-
+        skipBrand = false;
+    
         if (content.empty()) return result;
-
+    
         string line;
         for (char c: content) {
             if (c == '\n') {
-                if (!line.empty() || line[0] != '#') {
+                if (!line.empty() && line[0] != '#') {
                     size_t delimiterPos = line.find('|');
                     bool found = delimiterPos != string::npos;
-                    auto pkg = line.substr(0, found ? delimiterPos : line.size());
-                    if (pkg == packageName) {
+    
+                    string rawPkg = line.substr(0, found ? delimiterPos : line.size());
+    
+                    bool localSkipBrand = false;
+                    if (!rawPkg.empty() && rawPkg[0] == '!') {
+                        localSkipBrand = true;
+                        rawPkg = rawPkg.substr(1);
+                    }
+    
+                    if (rawPkg == packageName) {
+                        if (localSkipBrand) skipBrand = true;
+    
                         if (found) {
-                            result.push_back(line.substr(delimiterPos + 1, line.size()));
+                            result.push_back(line.substr(delimiterPos + 1));
                         } else {
                             result.push_back("");
                         }
