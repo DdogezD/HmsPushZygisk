@@ -48,7 +48,8 @@ public:
 
         string package_name = parsePackageName(app_data_dir.c_str());
 
-        LOGD("preAppSpecialize, packageName = %s, process = %s\n", package_name.c_str(), process_name.c_str());
+        LOGD("preAppSpecialize, packageName = %s, process = %s\n",
+             package_name.c_str(), process_name.c_str());
 
         preSpecialize(package_name, process_name);
     }
@@ -83,11 +84,13 @@ private:
         return "";
     }
 
-    void preSpecialize(string &packageName, const string &process) {
-        vector<string> processList = requestRemoteConfig(packageName);
+    void preSpecialize(const string &packageName, const string &process) {
+        bool skipBrand = false;
+        vector<string> processList = requestRemoteConfig(packageName, skipBrand);
+    
         if (!processList.empty()) {
             bool shouldHook = false;
-            for (const auto &item : processList) {
+            for (const auto &item: processList) {
                 if (item.empty() || item == process) {
                     shouldHook = true;
                     break;
@@ -95,12 +98,9 @@ private:
             }
     
             if (shouldHook) {
-                bool skipBrand = false;
-                if (!packageName.empty() && packageName[0] == '!') {
-                    skipBrand = true;
-                    packageName = packageName.substr(1);
-                }
-                Hook(api, env, skipBrand).hook();
+                LOGI("hook package = [%s], process = [%s], skipBrand = %d\n",
+                     packageName.c_str(), process.c_str(), skipBrand);
+                Hook(api, env, skipBrand).hook(); 
                 return;
             }
         }
@@ -113,15 +113,16 @@ private:
      * @param packageName
      * @return list of processes to hook
      */
-    vector<string> requestRemoteConfig(const string &packageName) {
+    vector<string> requestRemoteConfig(const string &packageName, bool &skipBrand) {
         LOGD("requestRemoteConfig for %s", packageName.c_str());
         auto fd = api->connectCompanion();
         LOGD("connect to companion fd = %d", fd);
         vector<char> content;
 
         auto size = receiveConfig(fd, content);
-        auto configs = parseConfig(content, packageName);
-        LOGD("Loaded module payload: %d bytes, config size:%lu ", size, configs.size());
+        auto configs = parseConfig(content, packageName, skipBrand);
+        LOGD("Loaded module payload: %d bytes, config size:%lu, skipBrand:%d ",
+             size, configs.size(), skipBrand);
 
         close(fd);
 
@@ -161,19 +162,30 @@ private:
         return bytesReceived;
     }
 
-    static vector<string> parseConfig(const vector<char> &content, const string &packageName) {
+    static vector<string> parseConfig(const vector<char> &content, const string &packageName, bool &skipBrand) {
         vector<string> result;
+        skipBrand = false;
 
         if (content.empty()) return result;
 
         string line;
         for (char c: content) {
             if (c == '\n') {
-                if (!line.empty() || line[0] != '#') {
+                if (!line.empty() && line[0] != '#') {
                     size_t delimiterPos = line.find('|');
                     bool found = delimiterPos != string::npos;
                     auto pkg = line.substr(0, found ? delimiterPos : line.size());
+
+                    // 检测包名前缀是否有 '!'
+                    bool localSkip = false;
+                    if (!pkg.empty() && pkg[0] == '!') {
+                        localSkip = true;
+                        pkg = pkg.substr(1); // 去掉 '!' 再比较
+                    }
+
                     if (pkg == packageName) {
+                        if (localSkip) skipBrand = true;
+
                         if (found) {
                             result.push_back(line.substr(delimiterPos + 1, line.size()));
                         } else {
