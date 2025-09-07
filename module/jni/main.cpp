@@ -98,13 +98,12 @@ private:
             }
     
             if (shouldHook) {
-                LOGI("hook package = [%s], process = [%s], skipBrand = %d\n",
+                LOGI("hook package = [%s], process = [%s], skipBrand=%d\n",
                      packageName.c_str(), process.c_str(), skipBrand);
-                Hook(api, env, skipBrand).hook(); 
+                Hook(api, env, skipBrand).hook();
                 return;
             }
         }
-    
         api->setOption(zygisk::Option::DLCLOSE_MODULE_LIBRARY);
     }
 
@@ -162,32 +161,30 @@ private:
         return bytesReceived;
     }
 
-    static vector<string> parseConfig(const vector<char> &content, const string &packageName, bool &skipBrand) {
+    static vector<string> parseConfig(const vector<char> &content, const string &packageName,  c bool &skipBrand) {
         vector<string> result;
         skipBrand = false;
-
         if (content.empty()) return result;
-
         string line;
         for (char c: content) {
             if (c == '\n') {
                 if (!line.empty() && line[0] != '#') {
                     size_t delimiterPos = line.find('|');
                     bool found = delimiterPos != string::npos;
-                    auto pkg = line.substr(0, found ? delimiterPos : line.size());
-
-                    // 检测包名前缀是否有 '!'
-                    bool localSkip = false;
-                    if (!pkg.empty() && pkg[0] == '!') {
-                        localSkip = true;
-                        pkg = pkg.substr(1); // 去掉 '!' 再比较
+    
+                    string rawPkg = line.substr(0, found ? delimiterPos : line.size());
+    
+                    bool localSkipBrand = false;
+                    if (!rawPkg.empty() && rawPkg[0] == '!') {
+                        localSkipBrand = true;
+                        rawPkg = rawPkg.substr(1);
                     }
-
-                    if (pkg == packageName) {
-                        if (localSkip) skipBrand = true;
-
+    
+                    if (rawPkg == packageName) {
+                        if (localSkipBrand) skipBrand = true;
+    
                         if (found) {
-                            result.push_back(line.substr(delimiterPos + 1, line.size()));
+                            result.push_back(line.substr(delimiterPos + 1));
                         } else {
                             result.push_back("");
                         }
