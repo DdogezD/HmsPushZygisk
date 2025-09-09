@@ -85,8 +85,8 @@ private:
     }
 
     void preSpecialize(const string &packageName, const string &process) {
-        bool skipBrand = false;
-        vector<string> processList = requestRemoteConfig(packageName, skipBrand);
+        bool skipBuild = false;
+        vector<string> processList = requestRemoteConfig(packageName, skipBuild);
     
         if (!processList.empty()) {
             bool shouldHook = false;
@@ -98,9 +98,9 @@ private:
             }
     
             if (shouldHook) {
-                LOGI("hook package = [%s], process = [%s], skipBrand=%d\n",
-                     packageName.c_str(), process.c_str(), skipBrand);
-                Hook(api, env, skipBrand).hook();
+                LOGI("hook package = [%s], process = [%s], skipBuild=%d\n",
+                     packageName.c_str(), process.c_str(), skipBuild);
+                Hook(api, env, skipBuild).hook();
                 return;
             }
         }
@@ -112,16 +112,16 @@ private:
      * @param packageName
      * @return list of processes to hook
      */
-    vector<string> requestRemoteConfig(const string &packageName, bool &skipBrand) {
+    vector<string> requestRemoteConfig(const string &packageName, bool &skipBuild) {
         LOGD("requestRemoteConfig for %s", packageName.c_str());
         auto fd = api->connectCompanion();
         LOGD("connect to companion fd = %d", fd);
         vector<char> content;
 
         auto size = receiveConfig(fd, content);
-        auto configs = parseConfig(content, packageName, skipBrand);
-        LOGD("Loaded module payload: %d bytes, config size:%lu, skipBrand:%d ",
-             size, configs.size(), skipBrand);
+        auto configs = parseConfig(content, packageName, skipBuild);
+        LOGD("Loaded module payload: %d bytes, config size:%lu, skipBuild:%d ",
+             size, configs.size(), skipBuild);
 
         close(fd);
 
@@ -161,9 +161,9 @@ private:
         return bytesReceived;
     }
 
-    static vector<string> parseConfig(const vector<char> &content, const string &packageName, bool &skipBrand) {
+    static vector<string> parseConfig(const vector<char> &content, const string &packageName, bool &skipBuild) {
         vector<string> result;
-        skipBrand = false;
+        skipBuild = false;
         if (content.empty()) return result;
         string line;
         for (char c: content) {
@@ -174,14 +174,14 @@ private:
     
                     string rawPkg = line.substr(0, found ? delimiterPos : line.size());
     
-                    bool localSkipBrand = false;
+                    bool localSkipBuild = false;
                     if (!rawPkg.empty() && rawPkg[0] == '!') {
-                        localSkipBrand = true;
+                        localSkipBuild = true;
                         rawPkg = rawPkg.substr(1);
                     }
     
                     if (rawPkg == packageName) {
-                        if (localSkipBrand) skipBrand = true;
+                        if (localSkipBuild) skipBuild = true;
     
                         if (found) {
                             result.push_back(line.substr(delimiterPos + 1));

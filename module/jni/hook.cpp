@@ -28,11 +28,11 @@ jstring my_native_get(JNIEnv *env, jclass clazz, jstring keyJ, jstring defJ) {
     }
 }
 
-void hookBuild(JNIEnv *env, bool skipBrand) {
+void hookBuild(JNIEnv *env, bool skipBuild) {
     LOGD("hook Build\n");
     jclass build_class = env->FindClass("android/os/Build");
 
-    if (!skipBrand) {
+    if (!skipBuild) {
         jstring new_brand = env->NewStringUTF("Huawei");
         jfieldID brand_id = env->GetStaticFieldID(build_class, "BRAND", "Ljava/lang/String;");
         jstring new_manufacturer = env->NewStringUTF("HUAWEI");
@@ -66,6 +66,6 @@ void hookSystemProperties(JNIEnv *env, zygisk::Api *api) {
 }
 
 void Hook::hook() {
-    hookBuild(env, skipBrand);
+    hookBuild(env, skipBuild);
     hookSystemProperties(env, api);
 }

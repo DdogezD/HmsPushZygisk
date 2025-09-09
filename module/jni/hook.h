@@ -10,15 +10,15 @@ using zygisk::Api;
 
 class Hook {
 public:
-    Hook(Api *api, JNIEnv *env, bool skipBrand = false)
-        : api(api), env(env), skipBrand(skipBrand) {}
+    Hook(Api *api, JNIEnv *env, bool skipBuild = false)
+        : api(api), env(env), skipBuild(skipBuild) {}
 
     void hook();
 
 private:
     Api *api;
     JNIEnv *env;
-    bool skipBrand;
+    bool skipBuild;
 };
 
 #endif //HMSPUSHZYGISK_HOOK_H
