@@ -35,18 +35,17 @@ void hookBuild(JNIEnv *env, bool skipBrand) {
     if (!skipBrand) {
         jstring new_brand = env->NewStringUTF("Huawei");
         jfieldID brand_id = env->GetStaticFieldID(build_class, "BRAND", "Ljava/lang/String;");
+        jstring new_manufacturer = env->NewStringUTF("HUAWEI");
+        jfieldID manufacturer_id = env->GetStaticFieldID(build_class, "MANUFACTURER", "Ljava/lang/String;");
         if (brand_id != nullptr) {
             env->SetStaticObjectField(build_class, brand_id, new_brand);
         }
+        if (manufacturer_id != nullptr) {
+            env->SetStaticObjectField(build_class, manufacturer_id, new_manufacturer);
+        }
         env->DeleteLocalRef(new_brand);
+        env->DeleteLocalRef(new_manufacturer);
     }
-
-    jstring new_manufacturer = env->NewStringUTF("HUAWEI");
-    jfieldID manufacturer_id = env->GetStaticFieldID(build_class, "MANUFACTURER", "Ljava/lang/String;");
-    if (manufacturer_id != nullptr) {
-        env->SetStaticObjectField(build_class, manufacturer_id, new_manufacturer);
-    }
-    env->DeleteLocalRef(new_manufacturer);
 
     LOGD("hook Build done");
 }
