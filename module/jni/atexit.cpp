@@ -83,7 +83,10 @@ namespace {
         if (count > 0) {
             size_t total = count;
             for (size_t i = count - 1;; --i) {
-                if (g_array[i].fn == nullptr) continue;
+                if (g_array[i].fn == nullptr) {
+                    if (i == 0) break;
+                    continue;
+                }
 
                 // Clear the entry in the array to avoid calling an entry again
                 // if __cxa_finalize is called recursively.
